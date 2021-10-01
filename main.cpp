@@ -6,7 +6,6 @@
 #include "settings.h"
 #include "environment.h"
 #include "work1.h"
-#include "buildnumber.h"
 
 Settings _settings(
     {
@@ -24,32 +23,31 @@ auto main(int argc, char *argv[]) -> int
     com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGINT_); // shut down on ctrl-c
     com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGTERM_); // shut down on killall
 
-//    zInfo(QStringLiteral("started: %1").arg(Buildnumber::buildnum));
-    zInfo(QStringLiteral("started: %1").arg(BUILDNUMBER));
+//    zInfo(QStringLiteral("started: %1").arg(BUILDNUMBER));
 
     QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName(QStringLiteral("test12"));
 
     QCommandLineParser parser;
 
-    parser.setApplicationDescription(QStringLiteral("command line test1 app."));
+    parser.setApplicationDescription(QStringLiteral("command line hwinfo app."));
     parser.addHelpOption();
     parser.addVersionOption();
 
-    const QString OPTION_TMP = QStringLiteral("template");
-    const QString OPTION_OUT = QStringLiteral("output");
-    const QString OPTION_PROJNAME = QStringLiteral("project");
+//    const QString OPTION_TMP = QStringLiteral("template");
+//    const QString OPTION_OUT = QStringLiteral("output");
+    const QString OPTION_IP = QStringLiteral("ip");
 
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PROJNAME, QStringLiteral("project name"));
+//    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
+//    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
+    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_IP, QStringLiteral("ip addr"));
 
     parser.process(a);
 
 //    // statikus, számítunk arra, hogy van
-    Work1::params.tmpfile = parser.value(OPTION_TMP);
-    Work1::params.ofile = parser.value(OPTION_OUT);
-    Work1::params.projname = parser.value(OPTION_PROJNAME);
+//    Work1::params.tmpfile = parser.value(OPTION_TMP);
+//    Work1::params.ofile = parser.value(OPTION_OUT);
+    Work1::params.ip = parser.value(OPTION_IP);
 
     //TODO a parser is nem kell, a paraméterek kellenek
     com::CoreAppWorker c(Work1::doWork, &a, &parser);
@@ -58,7 +56,10 @@ auto main(int argc, char *argv[]) -> int
     switch(errcode)
     {
         case 1: zInfo("no project name use option -p name"); break;
-        case 2: zInfo("project not found"); break;
+        case 2: zInfo("ping error"); break;
+        case 3: zInfo("hwid is empty"); break;
+        case 4: zInfo("mac is empty"); break;
+        case 5: zInfo("hwdata not found"); break;
     }
 
     auto e = QCoreApplication::exec();    

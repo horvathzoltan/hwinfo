@@ -36,6 +36,15 @@ public:
     int GetBuildNum(QSqlDatabase &db, int project);
     bool SetBuildNum(QSqlDatabase &db, int project, const QString &user, int buildnumber, const QString &project_name);
     static QString GetDriverName();
+
+    struct HwData{
+        QVariant serial;
+        QVariant board_rev;
+
+        bool isValid(){return serial.isValid()&&board_rev.isValid();}
+        QString ToString(){return serial.toString()+';'+board_rev.toString();}
+    };
+    static HwData GetHwData(QSqlDatabase &db, const QString &project_name);
 };
 
 #endif // SQLHELPER_H

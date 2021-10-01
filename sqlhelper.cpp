@@ -150,3 +150,31 @@ end:
     db.close();
     return project_id;
 }
+
+
+
+SQLHelper::HwData SQLHelper::GetHwData(QSqlDatabase &db, const QString &mac){
+    HwData hwdata;
+
+    if(!db.isValid()) return hwdata;
+
+    QSqlQuery query(db);
+    bool isok = db.open();
+    if(!isok) {goto end; }
+
+    isok = query.exec(QStringLiteral("SELECT serial,board_rev FROM BuildInfoFlex.dbo.ManufacturingInfo WHERE mac='%1';").arg(mac));
+    if(!isok) {goto end;}
+
+    if(query.size())
+    {
+        query.first();
+        hwdata.serial= query.value(0);
+        hwdata.board_rev= query.value(1);
+    }
+
+end:
+    Error(query.lastError());
+    Error(db.lastError());
+    db.close();
+    return hwdata;
+}

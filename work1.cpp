@@ -1,6 +1,7 @@
 #include "work1.h"
 #include "common/logger/log.h"
 #include "common/helper/textfilehelper/textfilehelper.h"
+#include "common/helper/ProcessHelper/processhelper.h"
 #include "sqlhelper.h"
 #include "settings.h"
 #include "environment.h"
@@ -16,36 +17,34 @@ Work1::Work1() = default;
 
 auto Work1::doWork() -> int
 {    
-    if(params.projname.isEmpty()) return 1;
+    if(params.ip.isEmpty()) return 1;
     //zTrace();
     SQLHelper sqlh;
     static const QString CONN = QStringLiteral("conn1");
-    auto db = sqlh.Connect(_settings._sql_settings, CONN);
-    QVariant project_id_v = sqlh.GetProjId(db, params.projname);
-    if(!project_id_v.isValid()) return 2;
-    if(project_id_v.isNull()) return 2;
-    int project_id = project_id_v.toInt();
-    auto buildnum = sqlh.GetBuildNum(db, project_id);
-    auto isok = sqlh.SetBuildNum(db, project_id, _environment.user_at_host, buildnum, params.projname);
-    if(!isok) return 3;
-    QSqlDatabase::removeDatabase(CONN);
-    auto buildnum_str = QString::number(buildnum);
-    std::cout << buildnum_str.toStdString() << '\n';
-    zInfo(QStringLiteral("buildnum ver: %1").arg(buildnum));
-    if(!params.tmpfile.isEmpty()){
-        if(!params.tmpfile.endsWith(".tmp")) return 4;
-        auto a = com::helper::TextFileHelper::load(params.tmpfile);
-        if(a.isEmpty()) return 5;
-        a = a.replace("${BUILDNUMBER}", buildnum_str);
-        auto fn2 = params.tmpfile.left(params.tmpfile.length()-4);        
-        QString of="";
-        if(params.ofile.isEmpty())
-            of = QFileInfo(fn2).fileName();
-        else
-            of = params.ofile;
-        if(com::helper::TextFileHelper::save(a, of)) zInfo(QStringLiteral("saved: ")+of)
+
+    QString cmd = QStringLiteral("ping %1 -w 1 -c 1").arg(params.ip);
+    auto out = com::helper::ProcessHelper::Execute(cmd);
+    if(out.exitCode) return 2;
+    cmd = QStringLiteral("arp -a");
+    out = com::helper::ProcessHelper::Execute(cmd);
+
+    QString mac = "";
+    auto lines = out.stdOut.split('\n');
+    for(auto &l: lines){
+        if(l.isEmpty()) continue;
+        auto fields = l.split(' ', Qt::SplitBehaviorFlags::SkipEmptyParts);
+        if(fields.count()<3) continue;
+
+        if(fields[1]!='('+params.ip+')') continue;
+        mac = fields[3];
     }
 
+    if(mac.isEmpty()) return 4;
+
+    auto db = sqlh.Connect(_settings._sql_settings, CONN);
+    auto hwdata = sqlh.GetHwData(db, mac);
+    if(!hwdata.isValid()) return 5;
+    zInfo(mac+';'+hwdata.ToString());
     return 0;
 }
 

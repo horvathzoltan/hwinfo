@@ -6,9 +6,7 @@
 
 struct Work1Params{
 public:
-    QString tmpfile;
-    QString ofile;
-    QString projname;
+    QString ip;
 };
 
 class Work1
