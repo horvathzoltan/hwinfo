@@ -45,6 +45,7 @@ public:
         QString ToString(){return serial.toString()+';'+board_rev.toString();}
     };
     static HwData GetHwData(QSqlDatabase &db, const QString &project_name);
+    static bool Ping(const QString &ip);
 };
 
 #endif // SQLHELPER_H

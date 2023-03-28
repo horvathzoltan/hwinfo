@@ -7,14 +7,16 @@
 struct Work1Params{
 public:
     QString ip;
+    QString mac;
 };
 
 class Work1
 {
 public:
-    Work1();
-    static int doWork();
-    static Work1Params params;
+    static Work1Params _params;
+
+    static int doWork();    
+    static QString GetMac();
 };
 
 #endif // WORK1_H

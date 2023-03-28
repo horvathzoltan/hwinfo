@@ -1,11 +1,15 @@
 #include <QCoreApplication>
-#include "common/logger/log.h"
-#include "common/helper/signalhelper/signalhelper.h"
-#include "common/coreappworker/coreappworker.h"
-#include "common/helper/CommandLineParserHelper/commandlineparserhelper.h"
+#include "helpers/logger.h"
+#include "helpers/signalhelper.h"
+#include "helpers/commandlineparserhelper.h"
+#include "helpers/coreappworker.h"
+
 #include "settings.h"
 #include "environment.h"
 #include "work1.h"
+
+// projects/run/CommandLineArguments
+// -m b8:27:eb:e3:cc:41
 
 Settings _settings(
     {
@@ -20,13 +24,13 @@ Environment _environment;
 
 auto main(int argc, char *argv[]) -> int
 {
-    com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGINT_); // shut down on ctrl-c
-    com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGTERM_); // shut down on killall
+    SignalHelper::setShutDownSignal(SignalHelper::SIGINT_); // shut down on ctrl-c
+    SignalHelper::setShutDownSignal(SignalHelper::SIGTERM_); // shut down on killall
+    Logger::Init(Logger::ErrLevel::INFO, Logger::DbgLevel::TRACE, true, true);
 
-//    zInfo(QStringLiteral("started: %1").arg(BUILDNUMBER));
 
     QCoreApplication a(argc, argv);
-    QCoreApplication::setApplicationName(QStringLiteral("test12"));
+    QCoreApplication::setApplicationName(QStringLiteral("hwinfo"));
 
     QCommandLineParser parser;
 
@@ -37,20 +41,24 @@ auto main(int argc, char *argv[]) -> int
 //    const QString OPTION_TMP = QStringLiteral("template");
 //    const QString OPTION_OUT = QStringLiteral("output");
     const QString OPTION_IP = QStringLiteral("ip");
+    const QString OPTION_MAC = QStringLiteral("mac");
 
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_IP, QStringLiteral("ip addr"));
+    CommandLineParserHelper::addOption(&parser, OPTION_IP, QStringLiteral("ip address"));
+    CommandLineParserHelper::addOption(&parser, OPTION_MAC, QStringLiteral("mac address"));
 
     parser.process(a);
 
 //    // statikus, számítunk arra, hogy van
 //    Work1::params.tmpfile = parser.value(OPTION_TMP);
 //    Work1::params.ofile = parser.value(OPTION_OUT);
-    Work1::params.ip = parser.value(OPTION_IP);
+    Work1::_params.ip = parser.value(OPTION_IP);
+    Work1::_params.mac = parser.value(OPTION_MAC);
 
     //TODO a parser is nem kell, a paraméterek kellenek
-    com::CoreAppWorker c(Work1::doWork, &a, &parser);
+    CoreAppWorker c(Work1::doWork, &a, &parser);
+
     volatile auto errcode = c.run();
 
     switch(errcode)
