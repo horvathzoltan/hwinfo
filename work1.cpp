@@ -1,5 +1,5 @@
 #include "work1.h"
-#include "helpers/logger.h"
+//#include "helpers/logger.h"
 //#include "helpers/textfilehelper.h"
 #include "helpers/processhelper.h"
 #include "sqlhelper.h"
@@ -26,7 +26,7 @@ int Work1::doWork()
     auto db = sqlh.Connect(_settings._sql_settings, CONN);
     auto hwdata = sqlh.GetHwData(db, mac); //b8:27:eb:e3:cc:41
     if(!hwdata.isValid()) return 5;
-    zInfo(mac+';'+hwdata.ToString());
+    std::cout << (mac+';'+hwdata.ToString()+'\n').toStdString();
     return 0;
 }
 
