@@ -10,6 +10,8 @@
 
 // projects/run/CommandLineArguments
 // -m b8:27:eb:e3:cc:41
+// vagy
+// -i 10.10.10.102
 
 Settings _settings(
     {
