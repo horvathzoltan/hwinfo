@@ -22,8 +22,9 @@ auto SQLHelper::GetDriverName() -> QString{
 
 auto SQLHelper::Ping(const QString& ip) -> bool
 {
-    auto out = ProcessHelper::Execute("ping", {"-c1","-W1",ip});
-    return !out.exitCode;
+    auto out = ProcessHelper::Execute("ping", {"-c5","-W1",ip});
+    bool ok = !out.exitCode;
+    return ok;
 }
 
 //https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-ver15#ubuntu
@@ -103,23 +104,31 @@ QVariant SQLHelper::GetProjId(QSqlDatabase &db, const QString &project_name)
     QVariant project_id;
 
     QSqlQuery query(db);
-    bool isok = db.open();
-    if(!isok) {goto end; }
-
-    isok = query.exec(QStringLiteral("SELECT id FROM BuildInfoFlex.dbo.Projects WHERE Name='%1';").arg(project_name));
-    if(!isok) {goto end;}
-
-    if(query.size())
-    {
-        query.first();
-        project_id= query.value(0);
+    bool isQueryOk = false;
+    bool isOpened = db.open();
+    if(isOpened) {
+        isQueryOk = query.exec(QStringLiteral("SELECT id FROM BuildInfoFlex.dbo.Projects WHERE Name='%1';").arg(project_name));
+        if(isQueryOk)
+        {
+            int rows = query.numRowsAffected();
+            bool a = query.isActive();
+            bool s = query.isSelect();
+            if(a && s)
+            {
+                if(rows>0)
+                {
+                    bool q = query.first();
+                    if(q){
+                        project_id= query.value(0);
+                    }
+                }
+            }
+        }
     }
-    else
-        project_id = QVariant();
-
-end:
-    Error(query.lastError());
-    Error(db.lastError());
+    if(!isOpened || !isQueryOk){
+        Error(query.lastError());
+        Error(db.lastError());
+    }
     db.close();
     return project_id;
 }
@@ -132,22 +141,30 @@ SQLHelper::HwData SQLHelper::GetHwData(QSqlDatabase &db, const QString &mac){
     if(!db.isValid()) return hwdata;
 
     QSqlQuery query(db);
-    bool isok = db.open();
-    if(!isok) {goto end; }
-
-    isok = query.exec(QStringLiteral("SELECT serial,board_rev FROM BuildInfoFlex.dbo.ManufacturingInfo WHERE lower(mac)='%1';").arg(mac));
-    if(!isok) {goto end;}
-
-    if(query.size())
-    {
-        query.first();
-        hwdata.serial= query.value(0);
-        hwdata.board_rev= query.value(1);
+    bool isQueryOk = false;
+    bool isOpened = db.open();
+    if(isOpened) {
+        isQueryOk = query.exec(QStringLiteral("SELECT serial,board_rev FROM BuildInfoFlex.dbo.ManufacturingInfo WHERE lower(mac)='%1';").arg(mac));
+        if(isQueryOk) {
+            int rows = query.numRowsAffected();
+            bool a = query.isActive();
+            bool s = query.isSelect();
+            if (a && s){
+                if( rows>0){
+                    bool q = query.first();
+                    if(q){
+                        hwdata.serial = query.value(0);
+                        hwdata.board_rev = query.value(1);
+                    }
+                }
+            }
+        }
     }
 
-end:
-    Error(query.lastError());
-    Error(db.lastError());
+    if(!isOpened || !isQueryOk){
+        Error(query.lastError());
+        Error(db.lastError());
+    }
     db.close();
     return hwdata;
 }

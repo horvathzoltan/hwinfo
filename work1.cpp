@@ -2,7 +2,7 @@
 //#include "helpers/logger.h"
 //#include "helpers/textfilehelper.h"
 #include "helpers/processhelper.h"
-#include "sqlhelper.h"
+#include "helpers/sqlhelper.h"
 #include "settings.h"
 #include "environment.h"
 #include <QVariant>
@@ -33,7 +33,7 @@ int Work1::doWork()
 QString Work1::GetMac(){
     if(_params.ip.isEmpty()) return {};
 
-    auto out = ProcessHelper::Execute("ping", {"-w1","-c1",_params.ip});
+    auto out = ProcessHelper::Execute("ping", {"-c5","-W1",_params.ip});
     if(out.exitCode) return {};
     out = ProcessHelper::Execute("arp", {"-a"});
 
