@@ -44,11 +44,13 @@ auto main(int argc, char *argv[]) -> int
 //    const QString OPTION_OUT = QStringLiteral("output");
     const QString OPTION_IP = QStringLiteral("ip");
     const QString OPTION_MAC = QStringLiteral("mac");
+    const QString OPTION_QUERY = QStringLiteral("query");
 
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
     CommandLineParserHelper::addOption(&parser, OPTION_IP, QStringLiteral("ip address"));
     CommandLineParserHelper::addOption(&parser, OPTION_MAC, QStringLiteral("mac address"));
+    CommandLineParserHelper::addOptionBool(&parser, OPTION_QUERY, QStringLiteral("query only"));
 
     parser.process(a);
 
@@ -57,6 +59,7 @@ auto main(int argc, char *argv[]) -> int
 //    Work1::params.ofile = parser.value(OPTION_OUT);
     Work1::_params.ip = parser.value(OPTION_IP);
     Work1::_params.mac = parser.value(OPTION_MAC);
+    Work1::_params.query = parser.isSet(OPTION_QUERY);
 
     //TODO a parser is nem kell, a paraméterek kellenek
     CoreAppWorker c(Work1::doWork, &a, &parser);

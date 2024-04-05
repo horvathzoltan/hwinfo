@@ -32,19 +32,25 @@ public:
 
     static QFileInfo GetMostRecent(const QString &path, const QString &pattern);
 
-    QVariant GetProjId(QSqlDatabase &db, const QString& project_name);
+    QVariant GetProjId(QSqlDatabase &db, const QString& project_name, int* rows);
     int GetBuildNum(QSqlDatabase &db, int project);
     bool SetBuildNum(QSqlDatabase &db, int project, const QString &user, int buildnumber, const QString &project_name);
     static QString GetDriverName();
 
     struct HwData{
+        QVariant mac;
         QVariant serial;
+        QVariant project;
         QVariant board_rev;
 
         bool isValid(){return serial.isValid()&&board_rev.isValid();}
         QString ToString(){return serial.toString()+';'+board_rev.toString();}
     };
-    static HwData GetHwData(QSqlDatabase &db, const QString &project_name);
+
+    static HwData GetHwData(QSqlDatabase &db, const QString &project_name, int* rows);
+    static QVariant GetLastSerial(QSqlDatabase &db, int* rows);
+    static void InsertHwData(QSqlDatabase &db, const HwData &hwdata, int* rows);
+
     static bool Ping(const QString &ip);
 };
 

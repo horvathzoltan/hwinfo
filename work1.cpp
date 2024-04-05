@@ -1,6 +1,7 @@
 #include "work1.h"
 //#include "helpers/logger.h"
 //#include "helpers/textfilehelper.h"
+#include "helpers/logger.h"
 #include "helpers/processhelper.h"
 #include "helpers/sqlhelper.h"
 #include "settings.h"
@@ -24,9 +25,43 @@ int Work1::doWork()
     SQLHelper sqlh;
     static const QString CONN = QStringLiteral("conn1");
     auto db = sqlh.Connect(_settings._sql_settings, CONN);
-    auto hwdata = sqlh.GetHwData(db, mac); //b8:27:eb:e3:cc:41
-    if(!hwdata.isValid()) return 5;
-    std::cout << (mac+';'+hwdata.ToString()+'\n').toStdString();
+    int rows;
+    auto hwdata = sqlh.GetHwData(db, mac, &rows); //b8:27:eb:e3:cc:41
+    if(rows>1){
+        zInfo("too many records");
+    } else if(rows==1) {
+        if(hwdata.isValid())
+        {
+            std::cout << (mac+';'+hwdata.ToString()+'\n').toStdString();
+        } else{
+            return 5;
+        }
+    } else{
+        zInfo("no record");
+        if(!_params.query){
+            int rows;
+            QVariant lastSerial = sqlh.GetLastSerial(db, &rows); // b8:27:eb:e3:cc:41
+
+            if(rows==1){
+                bool ok;
+                int serial = lastSerial.toInt(&ok);
+                if(ok){
+                    hwdata.mac = mac;
+                    hwdata.serial = ++serial;
+                    hwdata.project = "5";
+                    hwdata.board_rev = "logger_2v0";
+
+                    int rows;
+                    sqlh.InsertHwData(db, hwdata, &rows);
+                    if(rows>0){
+                        zInfo("row inserted");
+                        std::cout << (mac+';'+hwdata.ToString()+'\n').toStdString();
+                    }
+                }
+            }
+        }
+    }
+
     return 0;
 }
 

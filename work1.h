@@ -8,6 +8,7 @@ struct Work1Params{
 public:
     QString ip;
     QString mac;
+    bool query;
 };
 
 class Work1

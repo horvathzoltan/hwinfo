@@ -98,7 +98,7 @@ QFileInfo SQLHelper::GetMostRecent(const QString& path, const QString& pattern)
     return most_recent;
 }
 
-QVariant SQLHelper::GetProjId(QSqlDatabase &db, const QString &project_name)
+QVariant SQLHelper::GetProjId(QSqlDatabase &db, const QString &project_name, int* rows)
 {
     if(!db.isValid()) return -1;
     QVariant project_id;
@@ -110,15 +110,17 @@ QVariant SQLHelper::GetProjId(QSqlDatabase &db, const QString &project_name)
         isQueryOk = query.exec(QStringLiteral("SELECT id FROM BuildInfoFlex.dbo.Projects WHERE Name='%1';").arg(project_name));
         if(isQueryOk)
         {
-            int rows = query.numRowsAffected();
+            int r = query.numRowsAffected();
+            if(rows) *rows = r;
             bool a = query.isActive();
             bool s = query.isSelect();
             if(a && s)
             {
-                if(rows>0)
+                if(r>0)
                 {
                     bool q = query.first();
-                    if(q){
+                    if(q)
+                    {
                         project_id= query.value(0);
                     }
                 }
@@ -135,7 +137,7 @@ QVariant SQLHelper::GetProjId(QSqlDatabase &db, const QString &project_name)
 
 
 
-SQLHelper::HwData SQLHelper::GetHwData(QSqlDatabase &db, const QString &mac){
+SQLHelper::HwData SQLHelper::GetHwData(QSqlDatabase &db, const QString &mac, int* rows){
     HwData hwdata;
 
     if(!db.isValid()) return hwdata;
@@ -146,13 +148,17 @@ SQLHelper::HwData SQLHelper::GetHwData(QSqlDatabase &db, const QString &mac){
     if(isOpened) {
         isQueryOk = query.exec(QStringLiteral("SELECT serial,board_rev FROM BuildInfoFlex.dbo.ManufacturingInfo WHERE lower(mac)='%1';").arg(mac));
         if(isQueryOk) {
-            int rows = query.numRowsAffected();
+            int r = query.numRowsAffected();
+            if(rows) *rows = r;
             bool a = query.isActive();
             bool s = query.isSelect();
-            if (a && s){
-                if( rows>0){
+            if (a && s)
+            {
+                if(r>0)
+                {
                     bool q = query.first();
-                    if(q){
+                    if(q)
+                    {
                         hwdata.serial = query.value(0);
                         hwdata.board_rev = query.value(1);
                     }
@@ -166,5 +172,73 @@ SQLHelper::HwData SQLHelper::GetHwData(QSqlDatabase &db, const QString &mac){
         Error(db.lastError());
     }
     db.close();
+
     return hwdata;
+}
+
+QVariant SQLHelper::GetLastSerial(QSqlDatabase &db, int* rows){
+    QVariant serial;
+
+    QSqlQuery query(db);
+    bool isQueryOk = false;
+    bool isOpened = db.open();
+    if(isOpened) {
+        isQueryOk = query.exec(QStringLiteral("SELECT max(serial) FROM BuildInfoFlex.dbo.ManufacturingInfo;"));
+        if(isQueryOk) {
+            int r = query.numRowsAffected();
+            if(rows) *rows = r;
+            bool a = query.isActive();
+            bool s = query.isSelect();
+            if (a && s)
+            {
+                if(r>0)
+                {
+                    bool q = query.first();
+                    if(q)
+                    {
+                        serial = query.value(0);
+                    }
+                }
+            }
+        }
+    }
+
+    if(!isOpened || !isQueryOk){
+        Error(query.lastError());
+        Error(db.lastError());
+    }
+    db.close();
+
+    return serial;
+}
+
+//
+void SQLHelper::InsertHwData(QSqlDatabase &db, const HwData &hwdata, int* rows){
+    if(!db.isValid()) return;
+
+    QSqlQuery query(db);
+    bool isQueryOk = false;
+    bool isOpened = db.open();
+    if(isOpened) {
+        QString cmd = QStringLiteral("INSERT INTO BuildInfoFlex.dbo.ManufacturingInfo (mac,serial,project,board_rev) VALUES (:mac,:serial,:project,:board_rev);");
+        query.prepare(cmd);
+        query.bindValue(":mac", hwdata.mac);
+        query.bindValue(":serial", hwdata.serial);
+        query.bindValue(":project", hwdata.project);
+        query.bindValue(":board_rev", hwdata.board_rev);
+
+        isQueryOk = query.exec();
+        if(isQueryOk) {
+            int r = query.numRowsAffected();
+            if(rows) *rows = r;
+        }
+    }
+
+    if(!isOpened || !isQueryOk){
+        Error(query.lastError());
+        Error(db.lastError());
+    }
+    db.close();
+
+    return;
 }
